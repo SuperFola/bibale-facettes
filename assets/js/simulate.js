@@ -10,10 +10,38 @@ function transformToGenericObjectList(flatData) {
 			group: ++uid
 			, value: parseInt(entry.weight)
 			, name: entry.name
+			, clicked: false
 		});
 	});
 	
 	return container;
+}
+
+function googleColors(n) {
+	let colors = [
+		"#3366cc"
+		, "#dc3912"
+		, "#ff9900"
+		, "#109618"
+		, "#990099"
+		, "#0099c6"
+		, "#dd4477"
+		, "#66aa00"
+		, "#b82e2e"
+		, "#316395"
+		, "#994499"
+		, "#22aa99"
+		, "#aaaa11"
+		, "#6633cc"
+		, "#e67300"
+		, "#8b0707"
+		, "#651067"
+		, "#329262"
+		, "#5574a6"
+		, "#3b3eac"
+	];
+	
+	return colors[n % colors.length];
 }
 
 const chart = (root) => {
@@ -22,8 +50,8 @@ const chart = (root) => {
 		.attr("width", width)
 		.attr("height", height);
 	
-	var format = d3.format(",d"),
-		color = d3.scaleOrdinal(d3.schemeCategory20)
+	var format = d3.format(",d");
+	var color = d => googleColors(d.data.group);  //d3.scaleOrdinal(d3.schemeCategory20b)
 
 	var tooltip = d3.select("body").append("div")
 		.style("position", "absolute")
@@ -46,11 +74,27 @@ const chart = (root) => {
 		.enter().append("g")
 		.attr("class", "node")
 		.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+	
+	var toggleColor = (function() {
+		var currentColor = "#ddd";
+		return function() {
+			let lastcolor = arguments[0].data.color;
+			currentColor = (currentColor == "#ddd" ? lastcolor : "#ddd");
+			
+			root.onclick(arguments[0]);
+			arguments[0].data.clicked = !arguments[0].data.clicked;
+			
+			d3.select(this).style("fill", arguments[0].data.clicked ? "#ddd" : lastcolor);
+		}
+	})();
 
 	node.append("circle")
 		.attr("r", d => d.r)
-		.style("fill", d => color(d.data.group))
-		.on("click", d => root.onclick(d))
+		.style("fill", d => {
+			d.data.color = color(d);
+			return d.data.color;
+		})
+		.on("click", toggleColor)
 		.on("mouseover", d => {
 			tooltip.text(d.data.name + ": " + format(d.value));
 			tooltip.style("visibility", "visible");
